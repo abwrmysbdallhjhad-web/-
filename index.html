@@ -5,117 +5,66 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>Flappy Bird</title>
 <style>
-  * {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    background: #000;
-    color: #fff;
+    margin: 0; padding: 0; height: 100%;
+    background: #000; color: #fff;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    overflow: hidden;
-    overscroll-behavior: none;
+    overflow: hidden; overscroll-behavior: none;
   }
 
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  body { display: flex; align-items: center; justify-content: center; }
 
   #app {
     position: relative;
     width: 100%;
-    /* svh = smallest viewport height, لا يتغير عند إظهار/إخفاء شريط العناوين */
-    max-width: calc(100vh * 0.5625);   /* fallback */
-    max-width: calc(100svh * 0.5625);  /* modern, stable */
+    max-width: calc(100vh * 0.5625);
+    max-width: calc(100svh * 0.5625);
     aspect-ratio: 360 / 640;
-    background: #000;
-    overflow: hidden;
+    background: #000; overflow: hidden;
     touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
+    user-select: none; -webkit-user-select: none;
   }
 
-  #game {
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
+  #game { display: block; width: 100%; height: 100%; }
 
   .screen {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    padding: 24px;
-    text-align: center;
-    background: #000;
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; padding: 24px; text-align: center; background: #000;
   }
-
   .screen.hidden { display: none; }
-
   #gameoverScreen { background: rgba(0, 0, 0, 0.85); }
 
   button {
-    font-family: inherit;
-    font-size: 18px;
-    letter-spacing: 2px;
-    color: #fff;
-    background: transparent;
-    border: 2px solid #fff;
-    border-radius: 10px;
-    padding: 14px 40px;
-    min-width: 180px;
-    cursor: pointer;
+    font-family: inherit; font-size: 18px; letter-spacing: 2px;
+    color: #fff; background: transparent;
+    border: 2px solid #fff; border-radius: 10px;
+    padding: 14px 40px; min-width: 180px; cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease, transform 0.08s ease;
   }
-
-  @media (hover: hover) {
-    button:hover { background: #fff; color: #000; }
-  }
+  @media (hover: hover) { button:hover { background: #fff; color: #000; } }
   button:active { transform: scale(0.95); }
 
   .title { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: 3px; }
-
   .score-line { margin: 0; font-size: 20px; letter-spacing: 1px; }
   .score-line span { font-weight: 700; color: #ffd93d; }
 
-  /* INFO screen */
   #infoScreen { background: #000; }
-
   .info-card {
-    width: 100%;
-    max-width: 300px;
-    border: 2px solid #fff;
-    border-radius: 16px;
-    padding: 26px 22px;
-    background: #0d1117;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
+    width: 100%; max-width: 300px;
+    border: 2px solid #fff; border-radius: 16px;
+    padding: 26px 22px; background: #0d1117;
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
     direction: rtl;
   }
-
   .info-card p {
-    margin: 0;
-    font-size: 18px;
-    line-height: 1.6;
-    letter-spacing: 0.5px;
-    color: #ffffff;
+    margin: 0; font-size: 18px; line-height: 1.6; letter-spacing: 0.5px;
+    color: #fff;
     font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif;
   }
-
   .info-card p span { font-weight: 700; color: #ffd93d; }
-
   .info-card .divider { width: 60%; height: 1px; background: #30363d; }
 </style>
 </head>
@@ -152,7 +101,9 @@
 (function () {
   'use strict';
 
-  /* ===== 1. CONSTANTS ===== */
+  /* =========================================================
+     1. CONSTANTS
+     ========================================================= */
   const W = 360;
   const H = 640;
   const GROUND_H = 70;
@@ -182,7 +133,9 @@
     beak:       '#ff8c1a'
   };
 
-  /* ===== 2. STATE ===== */
+  /* =========================================================
+     2. STATE
+     ========================================================= */
   const STATE = { MENU: 'menu', INFO: 'info', PLAYING: 'playing', OVER: 'over' };
   let state = STATE.MENU;
 
@@ -192,12 +145,14 @@
 
   let running = false;
   let rafId = null;
-  let lastFrameTime = 0;
+  let lastTime = 0;
+  let accumulator = 0;
 
-  /* ===== 3. DOM ===== */
+  /* =========================================================
+     3. DOM
+     ========================================================= */
   const canvas = document.getElementById('game');
-
-  // ⚡ alpha:false = تحسين أداء ضخم على أندرويد (بدون دمج الشفافية)
+  // alpha:false: يمنع دمج الشفافية كل إطار — تحسين كبير على الأندرويد
   const ctx = canvas.getContext('2d', { alpha: false });
 
   const menuScreen     = document.getElementById('menuScreen');
@@ -207,17 +162,17 @@
 
   const screens = { menu: menuScreen, info: infoScreen, over: gameoverScreen };
 
-  /* ===== 4. CANVAS SIZING (تكيّف مع قوة الجهاز) ===== */
+  /* =========================================================
+     4. CANVAS SIZING
+     ========================================================= */
   function resizeCanvas() {
     const rect = canvas.getBoundingClientRect();
-
-    // نسقّف DPR عند 2 ثم نضبطه ديناميكيًا حسب عدد البكسلات الكلي
     let dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     let pxW = rect.width * dpr;
     let pxH = rect.height * dpr;
 
-    // منع الكانفاس من تجاوز ~900 ألف بكسل (حد آمن على الهواتف المتوسطة)
+    // سقف 900 ألف بكسل لمنع الأجهزة المتوسطة من الإرهاق
     const MAX_PIXELS = 900000;
     if (pxW * pxH > MAX_PIXELS) {
       const scale = Math.sqrt(MAX_PIXELS / (pxW * pxH));
@@ -234,30 +189,39 @@
       canvas.height = pxH;
     }
 
-    // بعد تغيير الحجم، يُصفّر المتصفح تحويلات الـ context — نعيد ضبطها
+    // إعادة ضبط التحويل بعد أي تغيير في الحجم
     ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
   }
 
-  // debounce: لا نعيد الحجم إلا بعد توقف الأحداث 100ms
   let resizeTimer = null;
   function debouncedResize() {
     if (resizeTimer) clearTimeout(resizeTimer);
     resizeTimer = setTimeout(resizeCanvas, 100);
   }
 
-  /* ===== 5. SCREEN HELPERS ===== */
+  /* =========================================================
+     5. SCREENS
+     ========================================================= */
   function showScreen(name) {
     for (const k in screens) screens[k].classList.add('hidden');
     if (name && screens[name]) screens[name].classList.remove('hidden');
   }
 
-  /* ===== 6. GAME LOOP (بحد 60fps) ===== */
-  const STEP_MS = 1000 / 60;   // ≈16.67ms
+  /* =========================================================
+     6. GAME LOOP — FIXED TIMESTEP
+     =========================================================
+     - الفيزياء تتقدم بخطوات ثابتة 60Hz دائماً
+     - معدل الرسم يتبع الشاشة (لكن نتخطى الرسم إن لم تتغير الفيزياء)
+     - هذا يضمن سرعة موحدة على كل الأجهزة (60/90/120Hz)
+     ========================================================= */
+  const FIXED_STEP_MS = 1000 / 60;   // ≈ 16.67 ms لكل خطوة فيزياء
+  const MAX_FRAME_MS  = 100;         // سقف لمنع "الانفجار" عند العودة من الخلفية
 
   function startLoop() {
     if (running) return;
     running = true;
-    lastFrameTime = 0;
+    lastTime = 0;
+    accumulator = 0;
     rafId = requestAnimationFrame(loop);
   }
 
@@ -270,23 +234,31 @@
     if (!running) return;
     rafId = requestAnimationFrame(loop);
 
-    if (lastFrameTime === 0) { lastFrameTime = now; return; }
+    if (lastTime === 0) { lastTime = now; return; }
 
-    const elapsed = now - lastFrameTime;
+    let frameTime = now - lastTime;
+    lastTime = now;
 
-    // ✋ على شاشات 120Hz هذا يمنع مضاعفة الشغل — نعمل بحد أقصى 60fps
-    if (elapsed < 15) return;
+    if (frameTime < 0) frameTime = 0;
+    if (frameTime > MAX_FRAME_MS) frameTime = MAX_FRAME_MS;
 
-    lastFrameTime = now;
-    let dt = elapsed / STEP_MS;
-    if (!isFinite(dt) || dt < 0) dt = 0;
-    if (dt > 3) dt = 3;   // حماية عند العودة من الخلفية
+    accumulator += frameTime;
 
-    update(dt);
-    render();
+    let didUpdate = false;
+    while (accumulator >= FIXED_STEP_MS) {
+      update(1);                       // dt دائماً = 1 خطوة ثابتة
+      accumulator -= FIXED_STEP_MS;
+      didUpdate = true;
+      if (state !== STATE.PLAYING) break;   // لعبة انتهت أثناء التحديث
+    }
+
+    // نرسم فقط عند تقدّم الفيزياء — يوفّر نصف شغل GPU على شاشات 120Hz
+    if (didUpdate) render();
   }
 
-  /* ===== 7. SETUP / RESET ===== */
+  /* =========================================================
+     7. SETUP / RESET
+     ========================================================= */
   function spawnPipe(x) {
     const minGapY = GAP_MARGIN + GAP / 2;
     const maxGapY = H - GROUND_H - GAP_MARGIN - GAP / 2;
@@ -308,6 +280,7 @@
     resetGame();
     state = STATE.PLAYING;
     showScreen(null);
+    render();     // ارسم الإطار الأول فوراً (قبل أن تبدأ الحلقة)
     startLoop();
   }
 
@@ -324,14 +297,16 @@
     showScreen('over');
   }
 
-  /* ===== 8. UPDATE ===== */
+  /* =========================================================
+     8. UPDATE (dt = 1 دائماً)
+     ========================================================= */
   function update(dt) {
     bird.vy += GRAVITY * dt;
     bird.y += bird.vy * dt;
 
     let angle = bird.vy / 14;
     if (angle < -0.5) angle = -0.5;
-    if (angle > 1.0) angle = 1.0;
+    if (angle > 1.0)  angle = 1.0;
     bird.angle = angle;
 
     for (let i = pipes.length - 1; i >= 0; i--) {
@@ -360,7 +335,6 @@
       const p = pipes[i];
       const gapTop = p.gapY - GAP / 2;
       const gapBottom = p.gapY + GAP / 2;
-
       if (circleHitsRect(bird.x, bird.y, HIT_R, p.x, 0, PIPE_W, gapTop)) { gameOver(); return; }
       if (circleHitsRect(bird.x, bird.y, HIT_R, p.x, gapBottom, PIPE_W, H - GROUND_H - gapBottom)) { gameOver(); return; }
     }
@@ -375,13 +349,13 @@
     return (dx * dx + dy * dy) < (r * r);
   }
 
-  /* ===== 9. RENDER ===== */
+  /* =========================================================
+     9. RENDER
+     ========================================================= */
   function render() {
-    // خلفية
     ctx.fillStyle = COLORS.bg;
     ctx.fillRect(0, 0, W, H);
 
-    // أنابيب
     for (let i = 0; i < pipes.length; i++) {
       const p = pipes[i];
       const gapTop = p.gapY - GAP / 2;
@@ -390,16 +364,13 @@
       drawPipe(p.x, gapBottom, PIPE_W, H - GROUND_H - gapBottom);
     }
 
-    // أرض
     ctx.fillStyle = COLORS.ground;
     ctx.fillRect(0, H - GROUND_H, W, GROUND_H);
     ctx.fillStyle = COLORS.groundLine;
     ctx.fillRect(0, H - GROUND_H, W, 4);
 
-    // طائر
     drawBird();
 
-    // نتيجة
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 42px system-ui, -apple-system, Arial, sans-serif';
     ctx.textAlign = 'center';
@@ -407,7 +378,6 @@
     ctx.fillText(String(score), W / 2, 62);
   }
 
-  // ⚡ نسخة أخف: بدون strokeRect (الحدود تُرسم بـ fillRect الرخيصة)
   function drawPipe(x, y, w, h) {
     if (h <= 0) return;
     ctx.fillStyle = COLORS.pipe;
@@ -416,6 +386,7 @@
     ctx.fillRect(x + 7, y, 9, h);
     ctx.fillStyle = COLORS.pipeDark;
     ctx.fillRect(x + w - 11, y, 11, h);
+    // الحدود بحشوة بسيطة (أسرع من strokeRect)
     ctx.fillStyle = COLORS.pipeBorder;
     ctx.fillRect(x, y, 2, h);
     ctx.fillRect(x + w - 2, y, 2, h);
@@ -455,25 +426,34 @@
     ctx.restore();
   }
 
-  /* ===== 10. INPUT ===== */
-  let lastFlapTime = 0;
+  /* =========================================================
+     10. INPUT — مسار واحد فقط، بدون تكرار
+     =========================================================
+     - PointerEvent موجود في Chrome/Edge/Safari/Firefox الحديثة
+     - يغطي اللمس والماوس والقلم في حدث واحد
+     - لا يوجد debounce: لا داعي له لأن مساراً واحداً فقط يُطلق
+     ========================================================= */
   function flap() {
     if (state !== STATE.PLAYING) return;
-    const now = performance.now();
-    if (now - lastFlapTime < 40) return;  // debounce: يمنع التسجيل المزدوج
-    lastFlapTime = now;
     bird.vy = FLAP;
   }
 
-  canvas.addEventListener('pointerdown', function (e) {
-    e.preventDefault();
-    flap();
-  });
-
-  canvas.addEventListener('touchstart', function (e) {
-    e.preventDefault();
-    flap();
-  }, { passive: false });
+  if ('PointerEvent' in window) {
+    canvas.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      flap();
+    });
+  } else {
+    // Fallback قديم جداً (لا يُستخدم عملياً اليوم)
+    canvas.addEventListener('touchstart', function (e) {
+      e.preventDefault();
+      flap();
+    }, { passive: false });
+    canvas.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      flap();
+    });
+  }
 
   document.addEventListener('keydown', function (e) {
     if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
@@ -482,7 +462,9 @@
     }
   });
 
-  /* ===== 11. BUTTONS ===== */
+  /* =========================================================
+     11. BUTTONS
+     ========================================================= */
   document.getElementById('startBtn').addEventListener('click', startGame);
   document.getElementById('infoBtn').addEventListener('click', function () {
     state = STATE.INFO;
@@ -495,7 +477,26 @@
   document.getElementById('againBtn').addEventListener('click', startGame);
   document.getElementById('menuBtn').addEventListener('click', goToMenu);
 
-  /* ===== 12. INIT ===== */
+  /* =========================================================
+     12. BACKGROUND / VISIBILITY — تصفير المؤقت
+     =========================================================
+     عند الانتقال لتطبيق آخر، قد يتوقف rAF لفترة طويلة.
+     عند العودة، lastTime سيكون قديماً جداً → frameTime ضخم.
+     تصفير lastTime + accumulator يمنع "قفزة" الفيزياء.
+     ========================================================= */
+  document.addEventListener('visibilitychange', function () {
+    lastTime = 0;
+    accumulator = 0;
+  });
+
+  window.addEventListener('blur', function () {
+    lastTime = 0;
+    accumulator = 0;
+  });
+
+  /* =========================================================
+     13. INIT
+     ========================================================= */
   window.addEventListener('resize', debouncedResize);
   window.addEventListener('orientationchange', debouncedResize);
 
